@@ -8,6 +8,69 @@ This is a 3-tier web application designed as a SQL injection challenge for educa
 - **Backend Layer**: RESTful API microservice built with Flask (Python)
 - **Database Layer**: PostgreSQL database
 
+### Architecture Diagram
+
+```mermaid
+graph TB
+    subgraph "Client Layer"
+        Browser[Web Browser]
+    end
+    
+    subgraph "Frontend Layer - Port 8080"
+        Nginx[Nginx Server]
+        HTML[index.html<br/>Login & Admin UI]
+        CSS[styles.css<br/>Styling]
+        JS[app.js<br/>Frontend Logic<br/>Session Management]
+        Nginx --> HTML
+        Nginx --> CSS
+        Nginx --> JS
+    end
+    
+    subgraph "Backend Layer - Port 5001"
+        Flask[Flask Application]
+        LoginAPI[/api/login<br/>Vulnerable Login]
+        SessionAPI[/api/session<br/>Session Check]
+        LogoutAPI[/api/logout<br/>Logout]
+        ComputersAPI[/api/computers<br/>List Computers]
+        SearchAPI[/api/search<br/>Vulnerable Search]
+        HealthAPI[/api/health<br/>Health Check]
+        Flask --> LoginAPI
+        Flask --> SessionAPI
+        Flask --> LogoutAPI
+        Flask --> ComputersAPI
+        Flask --> SearchAPI
+        Flask --> HealthAPI
+    end
+    
+    subgraph "Database Layer - Port 5432"
+        PostgreSQL[(PostgreSQL Database)]
+        UsersTable[(users table<br/>id, username, password, role)]
+        ComputersTable[(computers table<br/>id, computer_name, ip_address)]
+        FlagTable[(flag table<br/>id, flag)]
+        PostgreSQL --> UsersTable
+        PostgreSQL --> ComputersTable
+        PostgreSQL --> FlagTable
+    end
+    
+    Browser -->|HTTP Requests| Nginx
+    JS -->|API Calls| Flask
+    LoginAPI -->|SQL Queries| PostgreSQL
+    SessionAPI -->|Session Check| PostgreSQL
+    ComputersAPI -->|SQL Queries| PostgreSQL
+    SearchAPI -->|Vulnerable SQL| PostgreSQL
+    
+    style LoginAPI fill:#ff6b6b
+    style SearchAPI fill:#ff6b6b
+    style UsersTable fill:#4ecdc4
+    style ComputersTable fill:#4ecdc4
+    style FlagTable fill:#ffe66d
+```
+
+**Legend:**
+- 🔴 Red: Vulnerable endpoints (SQL injection)
+- 🔵 Blue: Database tables
+- 🟡 Yellow: Flag table (challenge target)
+
 ## Features
 
 1. **Vulnerable Login Page**: SQL injection can be used to bypass authentication
