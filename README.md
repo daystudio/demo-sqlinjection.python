@@ -12,15 +12,13 @@ This is a 3-tier web application designed as a SQL injection challenge for educa
 
 ```mermaid
 graph TB
-    subgraph Client["Client Layer"]
-        Browser[Web Browser]
-    end
+    Browser[Web Browser]
     
     subgraph Frontend["Frontend Layer - Port 8080"]
         Nginx[Nginx Server]
-        HTML[index.html - Login and Admin UI]
-        CSS[styles.css - Styling]
-        JS[app.js - Frontend Logic and Session Management]
+        HTML[index.html]
+        CSS[styles.css]
+        JS[app.js]
         Nginx --> HTML
         Nginx --> CSS
         Nginx --> JS
@@ -28,12 +26,12 @@ graph TB
     
     subgraph Backend["Backend Layer - Port 5001"]
         Flask[Flask Application]
-        LoginAPI["/api/login - Vulnerable Login"]
-        SessionAPI["/api/session - Session Check"]
-        LogoutAPI["/api/logout - Logout"]
-        ComputersAPI["/api/computers - List Computers"]
-        SearchAPI["/api/search - Vulnerable Search"]
-        HealthAPI["/api/health - Health Check"]
+        LoginAPI[/api/login]
+        SessionAPI[/api/session]
+        LogoutAPI[/api/logout]
+        ComputersAPI[/api/computers]
+        SearchAPI[/api/search]
+        HealthAPI[/api/health]
         Flask --> LoginAPI
         Flask --> SessionAPI
         Flask --> LogoutAPI
@@ -43,21 +41,21 @@ graph TB
     end
     
     subgraph Database["Database Layer - Port 5432"]
-        PostgreSQL[(PostgreSQL Database)]
-        UsersTable[("users table: id, username, password, role")]
-        ComputersTable[("computers table: id, computer_name, ip_address")]
-        FlagTable[("flag table: id, flag")]
+        PostgreSQL[(PostgreSQL)]
+        UsersTable[(users)]
+        ComputersTable[(computers)]
+        FlagTable[(flag)]
         PostgreSQL --> UsersTable
         PostgreSQL --> ComputersTable
         PostgreSQL --> FlagTable
     end
     
-    Browser -->|HTTP Requests| Nginx
-    JS -->|API Calls| Flask
-    LoginAPI -->|SQL Queries| PostgreSQL
-    SessionAPI -->|Session Check| PostgreSQL
-    ComputersAPI -->|SQL Queries| PostgreSQL
-    SearchAPI -->|Vulnerable SQL| PostgreSQL
+    Browser --> Nginx
+    JS --> Flask
+    LoginAPI --> PostgreSQL
+    SessionAPI --> PostgreSQL
+    ComputersAPI --> PostgreSQL
+    SearchAPI --> PostgreSQL
     
     style LoginAPI fill:#ff6b6b
     style SearchAPI fill:#ff6b6b
