@@ -2,6 +2,110 @@
 
 This guide demonstrates working SQL injection techniques to extract table schema and DDL from the vulnerable search endpoint.
 
+## What is SQL Injection?
+
+SQL Injection is a security vulnerability that occurs when user input is directly concatenated into SQL queries without proper sanitization. This allows attackers to manipulate the SQL query structure and execute unintended database operations.
+
+### Example: Vulnerable Login Code
+
+Let's examine the vulnerable login endpoint in `backend/app.py`:
+
+```python
+@app.route('/api/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    username = data.get('username', '')
+    password = data.get('password', '')
+    
+    # VULNERABLE: Direct string concatenation
+    query = f"SELECT * FROM users WHERE username = '{username}' AND password = '{password}'"
+    
+    cursor.execute(query)
+    user = cursor.fetchone()
+```
+
+### The Problem
+
+When a user enters normal credentials like:
+- Username: `admin`
+- Password: `admin123`
+
+The query becomes:
+```sql
+SELECT * FROM users WHERE username = 'admin' AND password = 'admin123'
+```
+
+This works correctly and checks if the credentials match.
+
+### The Attack
+
+However, an attacker can inject SQL code by entering:
+- Username: `admin' --`
+- Password: `anything`
+
+The query becomes:
+```sql
+SELECT * FROM users WHERE username = 'admin' --' AND password = 'anything'
+```
+
+**What happens:**
+1. The `'` closes the username string: `username = 'admin'`
+2. The `--` comments out everything after it, including the password check
+3. The query effectively becomes: `SELECT * FROM users WHERE username = 'admin'`
+4. The attacker logs in as admin without knowing the password!
+
+### Another Attack Example
+
+An attacker can also use:
+- Username: `' OR '1'='1`
+- Password: `' OR '1'='1`
+
+The query becomes:
+```sql
+SELECT * FROM users WHERE username = '' OR '1'='1' AND password = '' OR '1'='1'
+```
+
+**What happens:**
+- `'1'='1'` is always TRUE
+- The WHERE clause evaluates to TRUE, so it returns the first user in the database
+- The attacker bypasses authentication entirely
+
+### Why This Happens
+
+The code uses **f-string formatting** to directly insert user input into the SQL query:
+```python
+query = f"SELECT * FROM users WHERE username = '{username}' AND password = '{password}'"
+```
+
+This is dangerous because:
+- User input is not validated or sanitized
+- Special SQL characters (`'`, `--`, `OR`, etc.) are not escaped
+- The database executes whatever SQL is constructed
+
+### The Secure Solution
+
+To prevent SQL injection, use **parameterized queries** (also called prepared statements):
+
+```python
+# SECURE: Use parameterized queries
+query = "SELECT * FROM users WHERE username = %s AND password = %s"
+cursor.execute(query, (username, password))
+```
+
+With parameterized queries:
+- The database treats user input as **data**, not SQL code
+- Special characters are automatically escaped
+- The query structure cannot be manipulated
+
+### Key Takeaways
+
+1. **Never** concatenate user input directly into SQL queries
+2. **Always** use parameterized queries/prepared statements
+3. **Validate and sanitize** all user inputs
+4. **Use an ORM** (Object-Relational Mapping) framework when possible
+
+---
+
 ## Understanding the Vulnerable Query
 
 The search endpoint uses this vulnerable SQL query:
