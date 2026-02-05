@@ -26,12 +26,12 @@ graph TB
     
     subgraph Backend["Backend Layer - Port 5001"]
         Flask[Flask Application]
-        LoginAPI[/api/login]
-        SessionAPI[/api/session]
-        LogoutAPI[/api/logout]
-        ComputersAPI[/api/computers]
-        SearchAPI[/api/search]
-        HealthAPI[/api/health]
+        LoginAPI[api/login]
+        SessionAPI[api/session]
+        LogoutAPI[api/logout]
+        ComputersAPI[api/computers]
+        SearchAPI[api/search]
+        HealthAPI[api/health]
         Flask --> LoginAPI
         Flask --> SessionAPI
         Flask --> LogoutAPI
