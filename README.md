@@ -12,28 +12,28 @@ This is a 3-tier web application designed as a SQL injection challenge for educa
 
 ```mermaid
 graph TB
-    subgraph "Client Layer"
+    subgraph Client["Client Layer"]
         Browser[Web Browser]
     end
     
-    subgraph "Frontend Layer - Port 8080"
+    subgraph Frontend["Frontend Layer - Port 8080"]
         Nginx[Nginx Server]
-        HTML[index.html<br/>Login & Admin UI]
-        CSS[styles.css<br/>Styling]
-        JS[app.js<br/>Frontend Logic<br/>Session Management]
+        HTML[index.html - Login and Admin UI]
+        CSS[styles.css - Styling]
+        JS[app.js - Frontend Logic and Session Management]
         Nginx --> HTML
         Nginx --> CSS
         Nginx --> JS
     end
     
-    subgraph "Backend Layer - Port 5001"
+    subgraph Backend["Backend Layer - Port 5001"]
         Flask[Flask Application]
-        LoginAPI[/api/login<br/>Vulnerable Login]
-        SessionAPI[/api/session<br/>Session Check]
-        LogoutAPI[/api/logout<br/>Logout]
-        ComputersAPI[/api/computers<br/>List Computers]
-        SearchAPI[/api/search<br/>Vulnerable Search]
-        HealthAPI[/api/health<br/>Health Check]
+        LoginAPI["/api/login - Vulnerable Login"]
+        SessionAPI["/api/session - Session Check"]
+        LogoutAPI["/api/logout - Logout"]
+        ComputersAPI["/api/computers - List Computers"]
+        SearchAPI["/api/search - Vulnerable Search"]
+        HealthAPI["/api/health - Health Check"]
         Flask --> LoginAPI
         Flask --> SessionAPI
         Flask --> LogoutAPI
@@ -42,11 +42,11 @@ graph TB
         Flask --> HealthAPI
     end
     
-    subgraph "Database Layer - Port 5432"
+    subgraph Database["Database Layer - Port 5432"]
         PostgreSQL[(PostgreSQL Database)]
-        UsersTable[(users table<br/>id, username, password, role)]
-        ComputersTable[(computers table<br/>id, computer_name, ip_address)]
-        FlagTable[(flag table<br/>id, flag)]
+        UsersTable[("users table: id, username, password, role")]
+        ComputersTable[("computers table: id, computer_name, ip_address")]
+        FlagTable[("flag table: id, flag")]
         PostgreSQL --> UsersTable
         PostgreSQL --> ComputersTable
         PostgreSQL --> FlagTable
