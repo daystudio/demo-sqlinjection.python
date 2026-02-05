@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL Injection Challenge - Login</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="login-box" id="loginBox">
+            <h1>SQL Injection Challenge</h1>
+            <h2>Login</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit" class="btn">Login</button>
+            </form>
+            <div id="message" class="message"></div>
+            <div class="hint">
+                <p><strong>Hint:</strong> Try SQL injection techniques like:</p>
+                <ul>
+                    <li><code>' OR '1'='1</code></li>
+                    <li><code>' OR '1'='1' --</code></li>
+                    <li><code>' OR 1=1 --</code></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="admin-panel" id="adminPanel" style="display: none;">
+            <h1>Admin Panel</h1>
+            <div class="user-info">
+                <p>Logged in as: <strong id="currentUser"></strong></p>
+                <button id="logoutBtn" class="btn btn-secondary">Logout</button>
+            </div>
+            
+            <div class="search-section">
+                <h2>Search Computers</h2>
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Search by name or IP address...">
+                    <button id="searchBtn" class="btn">Search</button>
+                </div>
+                <div class="hint">
+                    <p><strong>Challenge:</strong> Extract table schema using SQL injection in the search box.</p>
+                    <p>Working payloads:</p>
+                    <ul>
+                        <li><code>' AND 1=0 UNION SELECT 1, table_name, column_name FROM information_schema.columns WHERE table_schema='public' --</code></li>
+                        <li><code>' AND 1=0 UNION SELECT 1, tablename, null FROM pg_tables WHERE schemaname='public' --</code></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="computers-section">
+                <h2>Computer List</h2>
+                <div id="computersList" class="computers-list"></div>
+            </div>
+        </div>
+
+        <div class="user-panel" id="userPanel" style="display: none;">
+            <h1>Welcome</h1>
+            <div class="user-info">
+                <p>Logged in as: <strong id="loggedInUser"></strong></p>
+                <button id="backToLoginBtn" class="btn btn-secondary">Logout</button>
+            </div>
+            
+            <div class="user-content">
+                <div class="welcome-message">
+                    <h2>Hello, <span id="userNameDisplay"></span>!</h2>
+                    <p>You have successfully logged in.</p>
+                </div>
+                
+                <div class="info-box">
+                    <h3>Account Information</h3>
+                    <div class="info-item">
+                        <span class="info-label">Login ID:</span>
+                        <span class="info-value" id="userLoginId"></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Account Type:</span>
+                        <span class="info-value">Standard User</span>
+                    </div>
+                </div>
+                
+                <div class="notice-box">
+                    <p><strong>Notice:</strong> You do not have administrator privileges.</p>
+                    <p>Only users with the login ID "admin" can access the computer list and administrative features.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
